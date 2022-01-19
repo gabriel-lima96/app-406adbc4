@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  php:
+    build:
+      args:
+        - user=app
+        - uid=${UID:-1000}
+        - gid=${GID:-1000}
+      context: ./docker/backend
+      target: backend
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./backend:/var/www
+
+  composer:
+    build:
+      args:
+        - user=composer
+        - uid=${UID:-1000}
+        - gid=${GID:-1000}
+      context: ./docker/backend
+      target: composer
+    user: ${UID:-1000}:${GID:-1000}
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+      - $HOME/.composer:/home/composer/.composer
+
+  db:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+#      MYSQL_PASSWORD: ${DB_PASSWORD}
+#      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+#      - ./docker/mysql:/docker-entrypoint-initdb.d # For initial dump.
+
+  nginx:
+    image: nginx:1.21-alpine
+    restart: unless-stopped
+    depends_on:
+      - php
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d
+
+volumes:
+  db_data:
