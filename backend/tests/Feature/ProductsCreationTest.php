@@ -8,30 +8,21 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
-class ProductsTest extends TestCase
+class ProductsCreationTest extends TestCase
 {
-    use WithFaker, RefreshDatabase;
+    use WithFaker;
 
     /** @test */
-    public function list_all_products(): void
-    {
-        $product = Products::factory()->create();
-
-        $response = $this->getJson('api/products');
-
-        $response->assertStatus(200)
-            ->assertJson([ $product->toArray() ]);
-    }
-
-    /** @test */
-    public function create_a_product(): void
+    public function response_must_be_successful(): void
     {
         $product = Products::factory()->make()->toArray();
 
         $response = $this->postJson('api/products', $product);
 
+        $url = $this->prepareUrlForRequest('api/products');
         $response->assertStatus(201)
-            ->assertJsonFragment($product);
+            ->assertJsonFragment($product)
+            ->assertHeader('Location', "$url/${product['sku']}");
     }
 
     /** @test */
@@ -66,5 +57,16 @@ class ProductsTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['name', 'sku', 'quantity']);
+    }
+
+    /** @test */
+    public function product_will_be_created(): void
+    {
+        $product = Products::factory()->make();
+
+        $this->postJson('api/products', $product->toArray());
+        $fetchedProduct = Products::where('sku', $product->sku)->first();
+
+        $this->assertTrue($fetchedProduct->exists);
     }
 }
