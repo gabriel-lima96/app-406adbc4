@@ -1,7 +1,7 @@
 <?php
 
+use App\Http\Controllers\ProductHistoryController;
 use App\Http\Controllers\ProductsController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/products', [ProductsController::class, 'index']);
 Route::get('/products/{product:sku}', [ProductsController::class, 'show']);
+Route::get('/products/{product:sku}/history', [ProductHistoryController::class, 'index']);
 Route::post('/products', [ProductsController::class, 'store']);
 Route::patch('/products/{product:sku}', [ProductsController::class, 'update']);
 Route::patch('/products/{product:sku}/increase', [ProductsController::class, 'increase']);

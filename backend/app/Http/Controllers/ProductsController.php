@@ -8,14 +8,12 @@ use App\Http\Requests\ProductsPatchRequest;
 use App\Http\Requests\ProductsPostRequest;
 use App\Models\Products;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
 class ProductsController extends Controller
 {
-
     public function index(): JsonResponse
     {
         $products = Products::all();
@@ -40,38 +38,51 @@ class ProductsController extends Controller
 
     public function update(ProductsPatchRequest $request, Products $product): Response
     {
-        $data = $request->validated();
+        return DB::transaction(function () use ($request, $product) {
+            $data = $request->validated();
 
-        $product->quantity = $data['quantity'];
+            $changed_quantity = $data['quantity'] - $product->quantity;
+            $product->quantity = $data['quantity'];
 
-        if (! $product->save())
-            return response(status: 500);
+            $product->save();
+            $product->history()->create([
+                'quantity_change' => $changed_quantity
+            ]);
 
-        return response(status: 204);
+            return response(status: 204);
+        });
     }
 
     public function increase(ProductsIncreaseRequest $request, Products $product): Response
     {
-        $data = $request->validated();
+        return DB::transaction(function () use ($request, $product) {
+            $data = $request->validated();
 
-        $product->quantity += $data['value'];
+            $product->quantity += $data['value'];
 
-        if (! $product->save())
-            return response(status: 500);
+            $product->save();
+            $product->history()->create([
+                'quantity_change' => $data['value']
+            ]);
 
-        return response(status: 204);
+            return response(status: 204);
+        });
     }
 
     public function decrease(ProductsDecreaseRequest $request, Products $product): Response
     {
-        $data = $request->validated();
+        return DB::transaction(function () use ($request, $product) {
+            $data = $request->validated();
 
-        $product->quantity -= $data['value'];
+            $product->quantity -= $data['value'];
 
-        if (! $product->save())
-            return response(status: 500);
+            $product->save();
+            $product->history()->create([
+                'quantity_change' => - $data['value']
+            ]);
 
-        return response(status: 204);
+            return response(status: 204);
+        });
     }
 
 //    public function destroy(Products $products): JsonResponse
