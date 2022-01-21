@@ -20,8 +20,9 @@ O ambiente do projeto foi todo configurado utilizando Docker.
 Com o Docker e Docker Compose instalados, seguir os passos:
 ```bash
 ./composer.sh install
-cp .env.example .env
+cp backend/.env.example backend/.env
 ./artisan.sh key:generate
+docker-compose up -d
 ./artisan.sh migrate
 ```
 
